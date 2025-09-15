@@ -1,7 +1,8 @@
 {
     "name": "rospy",
     "version": "1.0.0",
+    "type": "module",
     "dependencies": {
-        "node-fetch": "^2.6.12"
+        "node-fetch": "^3.3.2"
     }
 }
