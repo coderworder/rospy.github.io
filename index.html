@@ -60,6 +60,10 @@
         #search-btn:hover {
             background-color: #218838;
         }
+        #search-btn:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
         #user-info {
             background-color: white;
             padding: 20px;
@@ -172,7 +176,8 @@
 
     <script>
         let currentUserId = null;
-        const PROXY_URL = '/api/proxy?url='; // Adjust if your proxy endpoint differs
+        const PROXY_URL = '/api/proxy?url=';
+        let isSearching = false;
 
         function showSection(section) {
             document.getElementById('search-section').classList.toggle('hidden', section !== 'search');
@@ -183,9 +188,16 @@
         }
 
         async function trackUser() {
+            if (isSearching) return; // Prevent multiple clicks
+            isSearching = true;
+            const searchBtn = document.getElementById('search-btn');
+            searchBtn.disabled = true;
+
             const username = document.getElementById('search-input').value.trim();
             if (!username) {
                 showError('Please enter a username.');
+                isSearching = false;
+                searchBtn.disabled = false;
                 return;
             }
 
@@ -273,6 +285,8 @@
                 console.error('Full error:', error);
             } finally {
                 showLoading(false);
+                isSearching = false;
+                searchBtn.disabled = false;
             }
         }
 
