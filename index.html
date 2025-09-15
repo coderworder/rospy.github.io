@@ -96,6 +96,7 @@
         #error {
             color: #dc3545;
             text-align: center;
+            font-weight: bold;
         }
         #trending {
             background-color: white;
@@ -192,30 +193,62 @@
             hideUserInfo();
 
             try {
-                // Search for user
+                console.log(`Searching for username: ${username}`);
+
+                // Step 1: Search for user
                 const searchResponse = await fetch(`https://users.roblox.com/v1/users/search?keyword=${encodeURIComponent(username)}`);
+                if (!searchResponse.ok) {
+                    throw new Error(`Search API failed: ${searchResponse.status} ${searchResponse.statusText}`);
+                }
                 const searchData = await searchResponse.json();
+                console.log('Search response:', searchData);
+
                 if (!searchData.data || searchData.data.length === 0) {
                     showError('User not found.');
                     return;
                 }
 
-                const user = searchData.data[0]; // Take first match
+                const user = searchData.data[0];
                 currentUserId = user.id;
+                console.log(`Found user ID: ${currentUserId}`);
 
-                // Get user details
+                // Step 2: Get user details
                 const userResponse = await fetch(`https://users.roblox.com/v1/users/${currentUserId}`);
+                if (!userResponse.ok) {
+                    throw new Error(`User API failed: ${userResponse.status} ${userResponse.statusText}`);
+                }
                 const userData = await userResponse.json();
+                console.log('User data:', userData);
 
-                // Get admin status
-                const badgesResponse = await fetch(`https://accountinformation.roblox.com/v1/users/${currentUserId}/roblox-badges`);
-                const badgesData = await badgesResponse.json();
-                const isAdmin = badgesData.has_admin_badge;
+                // Step 3: Get admin status
+                let isAdmin = false;
+                try {
+                    const badgesResponse = await fetch(`https://accountinformation.roblox.com/v1/users/${currentUserId}/roblox-badges`);
+                    if (!badgesResponse.ok) {
+                        console.warn(`Badges API failed: ${badgesResponse.status} ${badgesResponse.statusText}`);
+                    } else {
+                        const badgesData = await badgesResponse.json();
+                        console.log('Badges data:', badgesData);
+                        isAdmin = badgesData.some(badge => badge.name === "Administrator");
+                    }
+                } catch (badgeError) {
+                    console.warn('Badge fetch failed, defaulting to non-admin:', badgeError);
+                }
 
-                // Get avatar
-                const avatarResponse = await fetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${currentUserId}&size=150x150&format=Png&isCircular=false`);
-                const avatarData = await avatarResponse.json();
-                const avatarUrl = avatarData.data && avatarData.data[0] ? avatarData.data[0].imageUrl : '';
+                // Step 4: Get avatar
+                let avatarUrl = '';
+                try {
+                    const avatarResponse = await fetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${currentUserId}&size=150x150&format=Png&isCircular=false`);
+                    if (!avatarResponse.ok) {
+                        console.warn(`Avatar API failed: ${avatarResponse.status} ${avatarResponse.statusText}`);
+                    } else {
+                        const avatarData = await avatarResponse.json();
+                        console.log('Avatar data:', avatarData);
+                        avatarUrl = avatarData.data && avatarData.data[0] ? avatarData.data[0].imageUrl : '';
+                    }
+                } catch (avatarError) {
+                    console.warn('Avatar fetch failed, using default:', avatarError);
+                }
 
                 // Update UI
                 document.getElementById('username').textContent = user.name;
@@ -225,16 +258,14 @@
                 document.getElementById('join-date').textContent = new Date(userData.created).toLocaleDateString();
                 document.getElementById('is-admin').textContent = isAdmin ? 'Yes' : 'No';
                 document.getElementById('is-admin').className = isAdmin ? 'admin-yes' : 'admin-no';
-                document.getElementById('user-avatar').src = avatarUrl;
+                document.getElementById('user-avatar').src = avatarUrl || 'https://via.placeholder.com/150';
 
                 showUserInfo();
-
-                // Update trending
                 updateTrending(username);
 
             } catch (error) {
-                showError('Error fetching data. Please try again.');
-                console.error(error);
+                showError(`Error: ${error.message}. Please check the console for details and try again.`);
+                console.error('Full error:', error);
             } finally {
                 showLoading(false);
             }
@@ -248,11 +279,10 @@
             } else {
                 tracked.push({ username, count: 1 });
             }
-            // Sort by count desc
             tracked.sort((a, b) => b.count - a.count);
-            // Keep top 10
             tracked = tracked.slice(0, 10);
             localStorage.setItem('trackedUsers', JSON.stringify(tracked));
+            console.log('Updated trending:', tracked);
         }
 
         function displayTrending() {
@@ -269,6 +299,7 @@
                 li.textContent = 'No tracked users yet.';
                 list.appendChild(li);
             }
+            console.log('Displayed trending:', tracked);
         }
 
         function showLoading(show) {
@@ -292,15 +323,14 @@
             document.getElementById('user-info').classList.add('hidden');
         }
 
-        // Allow Enter key to search
         document.getElementById('search-input').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 trackUser();
             }
         });
 
-        // Initial load
         showSection('search');
+        console.log('Website loaded at:', new Date().toLocaleString());
     </script>
 </body>
 </html>
