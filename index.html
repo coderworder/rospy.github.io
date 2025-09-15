@@ -172,6 +172,7 @@
 
     <script>
         let currentUserId = null;
+        const PROXY_URL = '/api/proxy?url='; // Adjust if your proxy endpoint differs
 
         function showSection(section) {
             document.getElementById('search-section').classList.toggle('hidden', section !== 'search');
@@ -195,8 +196,9 @@
             try {
                 console.log(`Searching for username: ${username}`);
 
-                // Step 1: Search for user
-                const searchResponse = await fetch(`https://users.roblox.com/v1/users/search?keyword=${encodeURIComponent(username)}`);
+                // Step 1: Search for user via proxy
+                const searchUrl = `https://users.roblox.com/v1/users/search?keyword=${encodeURIComponent(username)}`;
+                const searchResponse = await fetch(`${PROXY_URL}${encodeURIComponent(searchUrl)}`);
                 if (!searchResponse.ok) {
                     throw new Error(`Search API failed: ${searchResponse.status} ${searchResponse.statusText}`);
                 }
@@ -212,18 +214,20 @@
                 currentUserId = user.id;
                 console.log(`Found user ID: ${currentUserId}`);
 
-                // Step 2: Get user details
-                const userResponse = await fetch(`https://users.roblox.com/v1/users/${currentUserId}`);
+                // Step 2: Get user details via proxy
+                const userUrl = `https://users.roblox.com/v1/users/${currentUserId}`;
+                const userResponse = await fetch(`${PROXY_URL}${encodeURIComponent(userUrl)}`);
                 if (!userResponse.ok) {
                     throw new Error(`User API failed: ${userResponse.status} ${userResponse.statusText}`);
                 }
                 const userData = await userResponse.json();
                 console.log('User data:', userData);
 
-                // Step 3: Get admin status
+                // Step 3: Get admin status via proxy
                 let isAdmin = false;
                 try {
-                    const badgesResponse = await fetch(`https://accountinformation.roblox.com/v1/users/${currentUserId}/roblox-badges`);
+                    const badgesUrl = `https://accountinformation.roblox.com/v1/users/${currentUserId}/roblox-badges`;
+                    const badgesResponse = await fetch(`${PROXY_URL}${encodeURIComponent(badgesUrl)}`);
                     if (!badgesResponse.ok) {
                         console.warn(`Badges API failed: ${badgesResponse.status} ${badgesResponse.statusText}`);
                     } else {
@@ -235,10 +239,11 @@
                     console.warn('Badge fetch failed, defaulting to non-admin:', badgeError);
                 }
 
-                // Step 4: Get avatar
+                // Step 4: Get avatar via proxy
                 let avatarUrl = '';
                 try {
-                    const avatarResponse = await fetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${currentUserId}&size=150x150&format=Png&isCircular=false`);
+                    const avatarUrlEndpoint = `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${currentUserId}&size=150x150&format=Png&isCircular=false`;
+                    const avatarResponse = await fetch(`${PROXY_URL}${encodeURIComponent(avatarUrlEndpoint)}`);
                     if (!avatarResponse.ok) {
                         console.warn(`Avatar API failed: ${avatarResponse.status} ${avatarResponse.statusText}`);
                     } else {
