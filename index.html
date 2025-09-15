@@ -188,7 +188,7 @@
         }
 
         async function trackUser() {
-            if (isSearching) return; // Prevent multiple clicks
+            if (isSearching) return;
             isSearching = true;
             const searchBtn = document.getElementById('search-btn');
             searchBtn.disabled = true;
