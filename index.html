@@ -178,8 +178,11 @@
         let currentUserId = null;
         const PROXY_URL = '/api/proxy?url=';
         let isSearching = false;
+        let lastSearchTime = 0;
+        const SEARCH_COOLDOWN = 2000; // 2 seconds cooldown
 
         function showSection(section) {
+            console.log(`Switching to section: ${section}`);
             document.getElementById('search-section').classList.toggle('hidden', section !== 'search');
             document.getElementById('trending-section').classList.toggle('hidden', section !== 'trending');
             if (section === 'trending') {
@@ -188,8 +191,13 @@
         }
 
         async function trackUser() {
-            if (isSearching) return;
+            const now = Date.now();
+            if (isSearching || now - lastSearchTime < SEARCH_COOLDOWN) {
+                console.log('Search blocked: in progress or cooldown');
+                return;
+            }
             isSearching = true;
+            lastSearchTime = now;
             const searchBtn = document.getElementById('search-btn');
             searchBtn.disabled = true;
 
@@ -204,6 +212,7 @@
             showLoading(true);
             hideError();
             hideUserInfo();
+            resetUserInfo();
 
             try {
                 console.log(`Searching for username: ${username}`);
@@ -290,7 +299,20 @@
             }
         }
 
+        function resetUserInfo() {
+            console.log('Resetting user info');
+            document.getElementById('username').textContent = '';
+            document.getElementById('display-name').textContent = '';
+            document.getElementById('user-id').textContent = '';
+            document.getElementById('description').textContent = '';
+            document.getElementById('join-date').textContent = '';
+            document.getElementById('is-admin').textContent = '';
+            document.getElementById('is-admin').className = '';
+            document.getElementById('user-avatar').src = '';
+        }
+
         function updateTrending(username) {
+            console.log(`Updating trending for: ${username}`);
             let tracked = JSON.parse(localStorage.getItem('trackedUsers') || '[]');
             const existing = tracked.find(u => u.username === username);
             if (existing) {
@@ -305,6 +327,7 @@
         }
 
         function displayTrending() {
+            console.log('Displaying trending list');
             const tracked = JSON.parse(localStorage.getItem('trackedUsers') || '[]');
             const list = document.getElementById('trending-list');
             list.innerHTML = '';
@@ -322,23 +345,28 @@
         }
 
         function showLoading(show) {
+            console.log(`Toggling loading: ${show}`);
             document.getElementById('loading').classList.toggle('hidden', !show);
         }
 
         function showError(message) {
+            console.log(`Showing error: ${message}`);
             document.getElementById('error').textContent = message;
             document.getElementById('error').classList.remove('hidden');
         }
 
         function hideError() {
+            console.log('Hiding error');
             document.getElementById('error').classList.add('hidden');
         }
 
         function showUserInfo() {
+            console.log('Showing user info');
             document.getElementById('user-info').classList.remove('hidden');
         }
 
         function hideUserInfo() {
+            console.log('Hiding user info');
             document.getElementById('user-info').classList.add('hidden');
         }
 
